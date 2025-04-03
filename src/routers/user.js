@@ -1,5 +1,7 @@
 const express = require('express')
 const User = require('../modals/user')
+const { body, validationResult } = require("express-validator");
+
 const router = new express.Router()
 
 // router.get('/test', (req, res) => {
@@ -8,29 +10,71 @@ const router = new express.Router()
 
 // Create User (POST /users)
 
-router.post('/users', async (req, res) => {
-    // console.log(req.body)
-    // res.send('testing')
-    const user = new User(req.body)
+// router.post('/users', async (req, res) => {
+//     const user = new User(req.body)
+//     try {
+//         await user.save()
+//         res.status(201).send(user)
+//     } catch (err) {
+//         res.status(400).send(err)
+//     }
+// })
 
-    //Await
+router.post('/users', [
+    body("email")
+        .isEmail().withMessage('Invalid email format')
+        .custom(async (value) => {
+            const user = await User.findOne({ email: value });
+            if (user) {
+                throw new Error('Email already exists');
+            }
+        }),
+    ],[
+    body("phone")
+        .isMobilePhone()
+        .isNumeric().withMessage('Phone number must contain only digits')
+        .isLength({ min: 10, max: 10 })
+        .withMessage('Phone number must be containe 10 digits')
+        // .withMessage("Invalid phone number format")
+        .custom(async (value) => {
+            const existingUser = await User.findOne({ phone: value });
+            if (existingUser) {
+                throw new Error("Phone number already registered");
+            }
+            return true;
+        }),
+    ],
+    async (req, res) => {
+        // console.log(req.body)
+        // res.send('testing')
 
-    try {
-        await user.save()
-        res.status(201).send(user)
-    } catch (err) {
-        res.status(400).send(err)
-    }
+        const user = new User(req.body)
+
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        //Await
+
+        try {
+            const { phone } = req.body;
+            const newUser = new User({ email: req.body.email, phone: req.body.phone });
+
+            await user.save()
+            res.status(201).send({ message: "User registered successfully", user: newUser })
+        } catch (err) {
+            res.status(400).send(err)
+        }
 
 
-    //Await
+        //Await
 
-    // user.save().then(() => {
-    //     res.send(user)
-    // }).catch((err) => {
-    //     res.status(400).send(err)
-    // })
-})
+        // user.save().then(() => {
+        //     res.send(user)
+        // }).catch((err) => {
+        //     res.status(400).send(err)
+        // })
+    })
 
 // Update User (PUT /users/:id)
 

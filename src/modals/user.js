@@ -35,22 +35,38 @@ const userSchema = new mongoose.Schema({
                 throw new Error('Email format is invalide')
             }
         }
+        // validate: {
+        //     validator: function (v) {
+        //         return /^\+?[1-9]\d{1,14}$/.test(v); // E.164 format
+        //     },
+        //     message: (props) => `${props.value} is not a valid Email!`,
+        // },
     },
     phone: {
         type: String,
         required: true,
         unique: true,
         trim: true,
-        validate(value) {
-            if(!validator.isMobilePhone(value)){
-                throw new Error('Invalid Phone number')
-            } 
-        }
+
+        // validate(value)  {
+        //     if(!validator.isMobilePhone(value)){
+        //         throw new Error('Invalid Phone number')
+        //     } 
+        // }
+
         // validate(value) {
+        //     const existingUser = User.findOne({ phone: req.body.phone });
         //     if (existingUser) {
         //         return res.status(400).json({ message: 'Phone number already in use' });
         //     }
         // }
+
+        validate: {
+            validator: function (v) {
+                return /^\+?[1-9]\d{1,14}$/.test(v); // E.164 format
+            },
+            message: (props) => `${props.value} is not a valid phone number!`,
+        },
     },
     post: {
         type: String
